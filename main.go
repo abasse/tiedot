@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/HouzuoGuo/tiedot/benchmark"
-	"github.com/HouzuoGuo/tiedot/examples"
-	"github.com/HouzuoGuo/tiedot/httpapi"
-	"github.com/HouzuoGuo/tiedot/tdlog"
+	"github.com/abasse/tiedot/benchmark"
+	"github.com/abasse/tiedot/examples"
+	"github.com/abasse/tiedot/httpapi"
+	"github.com/abasse/tiedot/tdlog"
 )
 
 // Read Linux system VM parameters and print performance configuration advice when necessary.
@@ -62,11 +62,13 @@ func main() {
 	flag.BoolVar(&debug, "debug", false, "Dump goroutine stack traces upon receiving interrupt signal")
 	// HTTP mode params
 	var dir string
+	var csdir string
 	var bind string
 	var port int
 	var authToken string
 	var tlsCrt, tlsKey string
 	flag.StringVar(&dir, "dir", "", "(HTTP server) database directory")
+	flag.StringVar(&csdir, "csdir", "", "(HTTP server) contentstore directory")
 	flag.StringVar(&bind, "bind", "", "(HTTP server) bind to IP address (all network interfaces by default)")
 	flag.IntVar(&port, "port", 8080, "(HTTP server) port number")
 	flag.StringVar(&tlsCrt, "tlscrt", "", "(HTTP server) TLS certificate (empty to disable TLS).")
@@ -146,6 +148,11 @@ func main() {
 			tdlog.Notice("To enable JWT, please specify RSA private and public key.")
 			os.Exit(1)
 		}
+		if csdir == "" {
+			tdlog.Notice("Please specify contentstore directory, for example -csdir=/tmp/contentstore")
+			os.Exit(1)
+		}
+		httpapi.SetCSDir(csdir)
 		httpapi.Start(dir, port, tlsCrt, tlsKey, jwtPubKey, jwtPrivateKey, bind, authToken)
 	case "example":
 		// Run embedded usage examples

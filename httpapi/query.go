@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/HouzuoGuo/tiedot/db"
+	"github.com/abasse/tiedot/db"
 )
 
 // Execute a query and return documents from the result.

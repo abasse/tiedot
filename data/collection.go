@@ -17,7 +17,7 @@ package data
 import (
 	"encoding/binary"
 
-	"github.com/HouzuoGuo/tiedot/dberr"
+	"github.com/abasse/tiedot/dberr"
 )
 
 // Collection file contains document headers and document text data.

@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/HouzuoGuo/tiedot/dberr"
-	"github.com/HouzuoGuo/tiedot/tdlog"
+	"github.com/abasse/tiedot/dberr"
+	"github.com/abasse/tiedot/tdlog"
 )
 
 // Calculate union of sub-query results.

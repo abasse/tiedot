@@ -4,7 +4,7 @@ Keywords: Golang, go, document database, NoSQL, JSON
 
 ### tiedot - Your NoSQL database powered by Golang
 
-[![Build Status](https://travis-ci.org/HouzuoGuo/tiedot.svg?branch=master)](https://travis-ci.org/HouzuoGuo/tiedot) [![GoDoc](https://godoc.org/github.com/HouzuoGuo/tiedot?status.svg)](https://godoc.org/github.com/HouzuoGuo/tiedot) [Open Build Service](https://build.opensuse.org/package/show/home:guohouzuo/tiedot)
+[![Build Status](https://travis-ci.org/HouzuoGuo/tiedot.svg?branch=master)](https://travis-ci.org/HouzuoGuo/tiedot) [![GoDoc](https://godoc.org/github.com/abasse/tiedot?status.svg)](https://godoc.org/github.com/abasse/tiedot) [Open Build Service](https://build.opensuse.org/package/show/home:guohouzuo/tiedot)
 
 tiedot is a document database engine that uses __JSON__ as document notation; it has a powerful query processor that supports advanced set operations; it can be __embedded__ into your program, or run a stand-alone server using __HTTP__ for an API. It runs on *nix and Windows operating systems.
 
@@ -51,16 +51,16 @@ I love Go because it offers stable and predictable performance characteristics, 
 
 There are several other data structure servers/DB engines written in Go, namely "etcd", "leveldb-go" and "ql"; they emphasis on different usage scenarios, for example "etcd" is a data structure server designed for configuration management and service discovery, "leveldb-go" is a re-implementation of popular LevelDB in Go, and "ql" is an embeddable DB engine providing SQL capability. After all, when it comes to choosing a general purpose, embeddable NoSQL database engine, tiedot is perhaps the only choice so far (as far as I know).
 
-[Tutorial: tiedot in 10 minutes]: https://github.com/HouzuoGuo/tiedot/wiki/Tutorial
-[API reference and embedded usage]: https://github.com/HouzuoGuo/tiedot/wiki/API-reference-and-embedded-usage
-[Version History]: https://github.com/HouzuoGuo/tiedot/wiki/Version-History
-[Data structures]: https://github.com/HouzuoGuo/tiedot/wiki/Data-structures
-[Query processor and index]: https://github.com/HouzuoGuo/tiedot/wiki/Query-processor-and-index
-[Concurrency and networking]: https://github.com/HouzuoGuo/tiedot/wiki/Concurrency-and-networking
-[Performance tuning and benchmarks]: https://github.com/HouzuoGuo/tiedot/wiki/Performance-tuning-and-benchmarks
-[Limitations]: https://github.com/HouzuoGuo/tiedot/wiki/Limitations
+[Tutorial: tiedot in 10 minutes]: https://github.com/abasse/tiedot/wiki/Tutorial
+[API reference and embedded usage]: https://github.com/abasse/tiedot/wiki/API-reference-and-embedded-usage
+[Version History]: https://github.com/abasse/tiedot/wiki/Version-History
+[Data structures]: https://github.com/abasse/tiedot/wiki/Data-structures
+[Query processor and index]: https://github.com/abasse/tiedot/wiki/Query-processor-and-index
+[Concurrency and networking]: https://github.com/abasse/tiedot/wiki/Concurrency-and-networking
+[Performance tuning and benchmarks]: https://github.com/abasse/tiedot/wiki/Performance-tuning-and-benchmarks
+[Limitations]: https://github.com/abasse/tiedot/wiki/Limitations
 [Email me]: mailto:guohouzuo@gmail.com
 [Twitter]: https://twitter.com/hzguo
 [blog]: http://allstarnix.blogspot.com.au
-[Issues]: https://github.com/HouzuoGuo/tiedot/issues
-[Contributors and License]: https://github.com/HouzuoGuo/tiedot/wiki/Contributors-and-License
+[Issues]: https://github.com/abasse/tiedot/issues
+[Contributors and License]: https://github.com/abasse/tiedot/wiki/Contributors-and-License

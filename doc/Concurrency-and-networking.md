@@ -43,4 +43,4 @@ Once tiedot enters HTTP service mode, it keeps running in foreground until:
 - `/shutdown` endpoint is called (gracefully shutdown)
 - Process is stopped/interrupted/killed (not good!)
 
-[API reference and embedded usage]: https://github.com/HouzuoGuo/tiedot/wiki/API-reference-and-embedded-usage
+[API reference and embedded usage]: https://github.com/abasse/tiedot/wiki/API-reference-and-embedded-usage

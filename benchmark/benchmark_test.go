@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HouzuoGuo/tiedot/db"
+	"github.com/abasse/tiedot/db"
 )
 
 var benchTestSize = 100000

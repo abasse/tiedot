@@ -9,7 +9,7 @@ import (
 
 	"strings"
 
-	"github.com/HouzuoGuo/tiedot/dberr"
+	"github.com/abasse/tiedot/dberr"
 )
 
 func ensureMapHasKeys(m map[int]struct{}, keys ...int) bool {

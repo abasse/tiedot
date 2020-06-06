@@ -23,8 +23,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/HouzuoGuo/tiedot/db"
-	"github.com/HouzuoGuo/tiedot/tdlog"
+	"github.com/abasse/tiedot/db"
+	"github.com/abasse/tiedot/tdlog"
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -138,5 +138,5 @@ func Welcome(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid API endpoint", 404)
 		return
 	}
-	w.Write([]byte("Welcome to tiedot"))
+	w.Write([]byte("Welcome to tiedot CS"))
 }

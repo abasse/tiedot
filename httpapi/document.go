@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 )
+
+var CSDir string
 
 // Insert a document into collection.
 func Insert(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +44,10 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprint(err), 500)
 		return
 	}
+
+	// CS Save incoming document to file system
+	SaveDocument(id, doc)
+
 	w.WriteHeader(201)
 	w.Write([]byte(fmt.Sprint(id)))
 }
@@ -211,4 +218,32 @@ func ApproxDocCount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte(strconv.Itoa(dbcol.ApproxDocCount())))
+}
+
+// SaveDocument saves document to fs
+func SaveDocument(id int, content string) {
+	path := CSDir + "/" + strconv.Itoa(id)[0:2] + "/" + strconv.Itoa(id)[2:4]
+	filepath := path + "/" + strconv.Itoa(id) + ".json"
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		os.MkdirAll(path, 0777)
+	}
+
+	f, err := os.Create(filepath)
+	check(err)
+	_, err = f.WriteString(content)
+	check(err)
+
+	return
+}
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
+// SetCSDir set contentsotre directory
+func SetCSDir(dir string) {
+	CSDir = dir
 }

@@ -40,8 +40,8 @@ import (
 
 	"crypto/rsa"
 
-	"github.com/HouzuoGuo/tiedot/db"
-	"github.com/HouzuoGuo/tiedot/tdlog"
+	"github.com/abasse/tiedot/db"
+	"github.com/abasse/tiedot/tdlog"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/request"
 )

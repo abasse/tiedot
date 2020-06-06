@@ -17,8 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HouzuoGuo/tiedot/data"
-	"github.com/HouzuoGuo/tiedot/tdlog"
+	"github.com/abasse/tiedot/data"
+	"github.com/abasse/tiedot/tdlog"
 )
 
 const (

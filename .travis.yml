@@ -1,5 +1,5 @@
 language: go
-go_import_path: github.com/HouzuoGuo/tiedot
+go_import_path: github.com/abasse/tiedot
 sudo: false
 go:
   - 1.11
