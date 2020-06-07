@@ -93,10 +93,10 @@ func jwtInitSetup() {
 	if len(adminQueryResult) == 0 {
 		if _, err := jwtCol.Insert(map[string]interface{}{
 			JWT_USER_ATTR:        JWT_USER_ADMIN,
-			JWT_PASS_ATTR:        "",
+			JWT_PASS_ATTR:        JWT_USER_ADMIN,
 			JWT_COLLECTIONS_ATTR: []interface{}{},
 			JWT_ENDPOINTS_ATTR:   []interface{}{}}); err != nil {
-			tdlog.Panicf("JWT: failed to create default admin user - %v", err)
+			tdlog.Panicf("JWT: failed to create default admin user with pw admin - %v", err)
 		}
 		tdlog.Notice("JWT: successfully initialized DB for JWT features. The default user 'admin' has been created.")
 	}
@@ -228,19 +228,31 @@ func jwtWrap(originalHandler http.HandlerFunc) http.HandlerFunc {
 			originalHandler(w, r)
 			return
 		}
-		if !sliceContainsStr(tokenClaims[JWT_ENDPOINTS_ATTR], url) {
+
+		// CS better handling for endpoint and collection permissions
+		endpattr := fmt.Sprintf("%s", tokenClaims[JWT_ENDPOINTS_ATTR])
+		collattr := fmt.Sprintf("%s", tokenClaims[JWT_COLLECTIONS_ATTR])
+		if !strings.Contains(endpattr, url) {
 			http.Error(w, "", http.StatusUnauthorized)
 			return
-		} else if col != "" && !sliceContainsStr(tokenClaims[JWT_COLLECTIONS_ATTR], col) {
+		} else if col != "" && !strings.Contains(collattr, col) {
 			http.Error(w, "", http.StatusUnauthorized)
 			return
 		}
+		// if !sliceContainsStr(endp, url) {
+		// 	http.Error(w, "", http.StatusUnauthorized)
+		// 	return
+		// } else if col != "" && !sliceContainsStr(tokenClaims[JWT_COLLECTIONS_ATTR], col) {
+		// 	http.Error(w, "", http.StatusUnauthorized)
+		// 	return
+		// }
 		originalHandler(w, r)
 	}
 }
 
 // Return true if the string appears in string slice.
 func sliceContainsStr(possibleSlice interface{}, str string) bool {
+
 	switch possibleSlice.(type) {
 	case []string:
 		for _, elem := range possibleSlice.([]string) {
@@ -250,4 +262,5 @@ func sliceContainsStr(possibleSlice interface{}, str string) bool {
 		}
 	}
 	return false
+
 }

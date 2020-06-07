@@ -1,6 +1,8 @@
 
 <h1 align="center">tiedot CS</h1>
-<h3 align="center">This fork provides additional functionality to save documents outside of the tiedot db. !!!Please use with care, this repro is under developement!!!</h3>
+<h3 align="center">This fork provides additional functionality to save documents outside of the tiedot db.
+</h3>
+<h3> !!! Please use with care, this fork is under developement !!!</h3>
 <p align="center">
 <a href="https://travis-ci.org/HouzuoGuo/tiedot.svg?branch=master"><img src="https://travis-ci.org/HouzuoGuo/tiedot.svg?branch=master" alt="Build Status"></a>
     <a href="https://codecov.io/gh/HouzuoGuo/tiedot"><img src="https://codecov.io/gh/HouzuoGuo/tiedot/branch/master/graph/badge.svg" alt="codecov"></a>

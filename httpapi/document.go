@@ -5,13 +5,28 @@ package httpapi
 import (
 	"encoding/json"
 	"fmt"
+	"image/jpeg"
+	"io"
 	"io/ioutil"
+	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
+
+	"github.com/nfnt/resize"
 )
 
+// CSDir contentstore directory
 var CSDir string
+
+type Filemeta struct {
+	Id       int    `json:"id"`
+	Filename string `json:"filename"`
+	Size     int64  `json:"size"`
+	Filetype string `json:"filetype"`
+}
 
 // Insert a document into collection.
 func Insert(w http.ResponseWriter, r *http.Request) {
@@ -20,12 +35,25 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS")
 	var col, doc string
+	var hasfile bool
+
 	if !Require(w, r, "col", &col) {
 		return
 	}
-	defer r.Body.Close()
-	bodyBytes, _ := ioutil.ReadAll(r.Body)
-	doc = string(bodyBytes)
+
+	//CS  Check for uploaded file
+	file, handler, err := r.FormFile("file")
+
+	if err == nil {
+		defer file.Close()
+		hasfile = true
+		doc = r.FormValue("doc")
+	} else {
+		bodyBytes, _ := ioutil.ReadAll(r.Body)
+		doc = string(bodyBytes)
+		defer r.Body.Close()
+	}
+
 	if doc == "" && !Require(w, r, "doc", &doc) {
 		return
 	}
@@ -39,6 +67,7 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Collection '%s' does not exist.", col), 400)
 		return
 	}
+
 	id, err := dbcol.Insert(jsonDoc)
 	if err != nil {
 		http.Error(w, fmt.Sprint(err), 500)
@@ -46,7 +75,32 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// CS Save incoming document to file system
-	SaveDocument(id, doc)
+	SaveDocument(id, col, ".json", doc)
+
+	//CS save file to contentstore if exists
+	if hasfile {
+		// CS Create meta file
+		fm := Filemeta{id, handler.Filename, handler.Size, handler.Header["Content-Type"][0]}
+		filemeta, err := json.Marshal(fm)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		//Create preview for jpeg
+		if handler.Header["Content-Type"][0] == "image/jpeg" {
+			CreatePreview(id, col, file)
+		}
+
+		SaveDocument(id, col, ".meta", string(filemeta))
+		f, err := os.OpenFile(getPathToID(id, col)+filepath.Ext(handler.Filename), os.O_WRONLY|os.O_CREATE, 0666)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer f.Close()
+		io.Copy(f, file)
+	}
 
 	w.WriteHeader(201)
 	w.Write([]byte(fmt.Sprint(id)))
@@ -59,6 +113,7 @@ func Get(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS")
 	var col, id string
+
 	if !Require(w, r, "col", &col) {
 		return
 	}
@@ -174,6 +229,11 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprint(err), 500)
 		return
 	}
+
+	// Update document in contentstore
+	DeleteDocument(docID, col)
+	SaveDocument(docID, col, ".json", doc)
+
 }
 
 // Delete a document.
@@ -200,6 +260,10 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	dbcol.Delete(docID)
+
+	//Delete document from contentstore
+	DeleteDocument(docID, col)
+
 }
 
 // Return approximate number of documents in the collection.
@@ -220,21 +284,117 @@ func ApproxDocCount(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(strconv.Itoa(dbcol.ApproxDocCount())))
 }
 
-// SaveDocument saves document to fs
-func SaveDocument(id int, content string) {
-	path := CSDir + "/" + strconv.Itoa(id)[0:2] + "/" + strconv.Itoa(id)[2:4]
-	filepath := path + "/" + strconv.Itoa(id) + ".json"
+// CSGet retrieve contentstore document by ID.
+func CSGet(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "must-revalidate")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS")
+	var id, col, ftype string
+
+	if !Require(w, r, "id", &id) {
+		return
+	}
+
+	if !Require(w, r, "col", &col) {
+		return
+	}
+
+	if len(id) < 4 {
+		return
+	}
+
+	if !Require(w, r, "type", &ftype) {
+		return
+	}
+
+	if ftype == "json" || ftype == "meta" {
+		w.Header().Set("Content-Type", "application/json")
+	} else if ftype == "jpg" || ftype == "preview.jpg" {
+		w.Header().Set("Content-Type", "image/jpeg")
+	}
+
+	docID, err := strconv.Atoi(id)
+	check(err)
+
+	if !fileExists(getPathToID(docID, col) + "." + ftype) {
+		http.Error(w, fmt.Sprintf("File for id '%s' does not exist", id), 400)
+		return
+	}
+
+	doc, err := ioutil.ReadFile(getPathToID(docID, col) + "." + ftype)
+	check(err)
+
+	w.Write(doc)
+}
+
+// CreatePreview
+func CreatePreview(id int, col string, file multipart.File) {
+	img, err := jpeg.Decode(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+	file.Close()
+
+	// resize to width 150 using Lanczos resampling
+	// and preserve aspect ratio
+	m := resize.Resize(150, 0, img, resize.Lanczos3)
+
+	out, err := os.Create(getPathToID(id, col) + ".preview.jpg")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer out.Close()
+
+	// write new image to file
+	jpeg.Encode(out, m, nil)
+}
+
+// SaveDocument saves document to filesystem
+func SaveDocument(id int, col string, ext string, content string) {
+	path := CSDir + "/" + col + "/" + strconv.Itoa(id)[0:2] + "/" + strconv.Itoa(id)[2:4]
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		os.MkdirAll(path, 0777)
 	}
 
-	f, err := os.Create(filepath)
+	f, err := os.Create(getPathToID(id, col) + ext)
 	check(err)
 	_, err = f.WriteString(content)
 	check(err)
 
 	return
+}
+
+// DeleteDocument saves document to filesystem
+func DeleteDocument(id int, col string) {
+
+	files, err := filepath.Glob(getPathToID(id, col) + "*")
+	if err != nil {
+		panic(err)
+	}
+	for _, f := range files {
+		if err := os.Remove(f); err != nil {
+			panic(err)
+		}
+	}
+
+	// if fileExists(getPathToID(id, col) + ext) {
+	// 	var err = os.Remove(getPathToID(id, col) + ext)
+	// 	check(err)
+	// }
+	return
+}
+
+func getPathToID(id int, col string) string {
+	return CSDir + "/" + col + "/" + strconv.Itoa(id)[0:2] + "/" + strconv.Itoa(id)[2:4] + "/" + strconv.Itoa(id)
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
 
 func check(e error) {
@@ -243,7 +403,7 @@ func check(e error) {
 	}
 }
 
-// SetCSDir set contentsotre directory
+// SetCSDir set contentstore directory
 func SetCSDir(dir string) {
 	CSDir = dir
 }

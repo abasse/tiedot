@@ -115,6 +115,8 @@ func Start(dir string, port int, tlsCrt, tlsKey, jwtPubKey, jwtPrivateKey, bind,
 	// misc (stop-the-world)
 	http.HandleFunc("/shutdown", authWrap(Shutdown))
 	http.HandleFunc("/dump", authWrap(Dump))
+	// contentstore
+	http.HandleFunc("/csget", authWrap(CSGet))
 
 	iface := "all interfaces"
 	if bind != "" {

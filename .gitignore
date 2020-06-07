@@ -2,3 +2,5 @@ coverage.txt
 .idea
 pkgcoverage.txt
 tiedot
+jw-test.key
+jw-test.pub
