@@ -43,7 +43,7 @@ func Require(w http.ResponseWriter, r *http.Request, key string, val *string) bo
 }
 
 // Start HTTP server and block until the server shuts down. Panic on error.
-func Start(dir string, port int, tlsCrt, tlsKey, jwtPubKey, jwtPrivateKey, bind, authToken string) {
+func Start(webdir string, dir string, port int, tlsCrt, tlsKey, jwtPubKey, jwtPrivateKey, bind, authToken string) {
 	var err error
 	HttpDB, err = db.OpenDB(dir)
 	if err != nil {
@@ -51,7 +51,13 @@ func Start(dir string, port int, tlsCrt, tlsKey, jwtPubKey, jwtPrivateKey, bind,
 	}
 
 	// These endpoints are always available and do not require authentication
-	http.HandleFunc("/", Welcome)
+	if webdir != "" {
+		fs := http.FileServer(http.Dir(webdir))
+		http.Handle("/", fs)
+		http.HandleFunc("/welcome", Welcome)
+	} else {
+		http.HandleFunc("/", Welcome)
+	}
 	http.HandleFunc("/version", Version)
 	http.HandleFunc("/memstats", MemStats)
 

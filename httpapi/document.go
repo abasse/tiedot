@@ -5,8 +5,13 @@ package httpapi
 import (
 	"encoding/json"
 	"fmt"
+	"image"
+	_ "image/gif"
 	"image/jpeg"
+	_ "image/png"
 	"io"
+	"strings"
+
 	"io/ioutil"
 	"log"
 	"mime/multipart"
@@ -22,7 +27,6 @@ import (
 var CSDir string
 
 type Filemeta struct {
-	Id       int    `json:"id"`
 	Filename string `json:"filename"`
 	Size     int64  `json:"size"`
 	Filetype string `json:"filetype"`
@@ -44,10 +48,26 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 	//CS  Check for uploaded file
 	file, handler, err := r.FormFile("file")
 
-	if err == nil {
+	if err == nil && col != "jwt" {
 		defer file.Close()
 		hasfile = true
-		doc = r.FormValue("doc")
+		fm := Filemeta{handler.Filename, handler.Size, handler.Header["Content-Type"][0]}
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		var jsonDoc map[string]interface{}
+		if err := json.Unmarshal([]byte(r.FormValue("doc")), &jsonDoc); err != nil {
+			http.Error(w, fmt.Sprintf("'%v' is not valid JSON document.", doc), 400)
+			return
+		}
+		jsonDoc["filemeta"] = fm
+		jdoc, err := json.Marshal(jsonDoc)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		doc = string(jdoc)
 	} else {
 		bodyBytes, _ := ioutil.ReadAll(r.Body)
 		doc = string(bodyBytes)
@@ -62,6 +82,7 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("'%v' is not valid JSON document.", doc), 400)
 		return
 	}
+
 	dbcol := HttpDB.Use(col)
 	if dbcol == nil {
 		http.Error(w, fmt.Sprintf("Collection '%s' does not exist.", col), 400)
@@ -74,32 +95,26 @@ func Insert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// CS Save incoming document to file system
-	SaveDocument(id, col, ".json", doc)
+	// CS Save incoming document to file system but not for jwt documents
+	if col != "jwt" {
+		SaveDocument(id, col, ".json", doc)
+		// CS save file
+		if hasfile {
+			f, err := os.OpenFile(getPathToID(id, col)+filepath.Ext(handler.Filename), os.O_WRONLY|os.O_CREATE, 0666)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			defer f.Close()
+			io.Copy(f, file)
 
-	//CS save file to contentstore if exists
-	if hasfile {
-		// CS Create meta file
-		fm := Filemeta{id, handler.Filename, handler.Size, handler.Header["Content-Type"][0]}
-		filemeta, err := json.Marshal(fm)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+			if strings.Contains(handler.Header["Content-Type"][0], "image/") {
+				imagePath, _ := os.Open(getPathToID(id, col) + filepath.Ext(handler.Filename))
+				defer imagePath.Close()
+				CreatePreview(id, col, imagePath)
+			}
 
-		//Create preview for jpeg
-		if handler.Header["Content-Type"][0] == "image/jpeg" {
-			CreatePreview(id, col, file)
 		}
-
-		SaveDocument(id, col, ".meta", string(filemeta))
-		f, err := os.OpenFile(getPathToID(id, col)+filepath.Ext(handler.Filename), os.O_WRONLY|os.O_CREATE, 0666)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		defer f.Close()
-		io.Copy(f, file)
 	}
 
 	w.WriteHeader(201)
@@ -329,7 +344,7 @@ func CSGet(w http.ResponseWriter, r *http.Request) {
 
 // CreatePreview
 func CreatePreview(id int, col string, file multipart.File) {
-	img, err := jpeg.Decode(file)
+	img, _, err := image.Decode(file)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -351,6 +366,11 @@ func CreatePreview(id int, col string, file multipart.File) {
 
 // SaveDocument saves document to filesystem
 func SaveDocument(id int, col string, ext string, content string) {
+
+	if col == "jwt" {
+		return
+	}
+
 	path := CSDir + "/" + col + "/" + strconv.Itoa(id)[0:2] + "/" + strconv.Itoa(id)[2:4]
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -368,6 +388,10 @@ func SaveDocument(id int, col string, ext string, content string) {
 // DeleteDocument saves document to filesystem
 func DeleteDocument(id int, col string) {
 
+	if col == "jwt" {
+		return
+	}
+
 	files, err := filepath.Glob(getPathToID(id, col) + "*")
 	if err != nil {
 		panic(err)
@@ -377,11 +401,6 @@ func DeleteDocument(id int, col string) {
 			panic(err)
 		}
 	}
-
-	// if fileExists(getPathToID(id, col) + ext) {
-	// 	var err = os.Remove(getPathToID(id, col) + ext)
-	// 	check(err)
-	// }
 	return
 }
 

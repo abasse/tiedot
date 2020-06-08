@@ -61,12 +61,14 @@ func main() {
 	flag.BoolVar(&profile, "profile", false, "Write profiler results to prof.out")
 	flag.BoolVar(&debug, "debug", false, "Dump goroutine stack traces upon receiving interrupt signal")
 	// HTTP mode params
+	var webdir string
 	var dir string
 	var csdir string
 	var bind string
 	var port int
 	var authToken string
 	var tlsCrt, tlsKey string
+	flag.StringVar(&webdir, "webdir", "", "(HTTP server) static webserver directory (optional)")
 	flag.StringVar(&dir, "dir", "", "(HTTP server) database directory")
 	flag.StringVar(&csdir, "csdir", "", "(HTTP server) contentstore directory")
 	flag.StringVar(&bind, "bind", "", "(HTTP server) bind to IP address (all network interfaces by default)")
@@ -153,7 +155,7 @@ func main() {
 			os.Exit(1)
 		}
 		httpapi.SetCSDir(csdir)
-		httpapi.Start(dir, port, tlsCrt, tlsKey, jwtPubKey, jwtPrivateKey, bind, authToken)
+		httpapi.Start(webdir, dir, port, tlsCrt, tlsKey, jwtPubKey, jwtPrivateKey, bind, authToken)
 	case "example":
 		// Run embedded usage examples
 		examples.EmbeddedExample()
