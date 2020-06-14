@@ -54,12 +54,14 @@ func Start(webdir string, dir string, port int, tlsCrt, tlsKey, jwtPubKey, jwtPr
 	if webdir != "" {
 		fs := http.FileServer(http.Dir(webdir))
 		http.Handle("/", fs)
-		http.HandleFunc("/welcome", Welcome)
+
 	} else {
 		http.HandleFunc("/", Welcome)
 	}
+
 	http.HandleFunc("/version", Version)
 	http.HandleFunc("/memstats", MemStats)
+	http.HandleFunc("/welcome", Welcome)
 
 	// Install API endpoint handlers that may require authorization
 	var authWrap func(http.HandlerFunc) http.HandlerFunc
